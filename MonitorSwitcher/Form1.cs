@@ -17,24 +17,21 @@ namespace MonitorSwitcher
 
         //configuration manager instance
         private ConfigurationManager _configManager;
-        private List<string> _configuredPrograms;
+            
+        private List<ProgramConfig> _configuredPrograms;
+        private MonitorManager _monitorManager;
         public Form1()
         {
             InitializeComponent();
             //init the ConfigurationManager
             _configManager = new ConfigurationManager();
-            _configuredPrograms = new List<string>();
+            _configuredPrograms = new List<ProgramConfig>();
 
             //init the ProcessMonitor
             _processMonitor = new ProcessMonitor();
 
             _processMonitor.ProcessStarted += ProcessMonitor_ProcessStarted;
             _processMonitor.ProcessStopped += ProcessMonitor_ProcessStopped;
-
-            loadConfigurationbutton.Click += LoadConfigButton_Click;
-            saveConfigurationButton.Click += SaveConfigButton_Click;
-            removeGameButton.Click += RemoveGameButton_Click;
-            addGameButton.Click += AddGameButton_Click;
 
             // Start monitoring when the form loads
             this.Load += Form1_Load;
@@ -44,36 +41,10 @@ namespace MonitorSwitcher
 
 
         }
-/*        private void ProcessMonitor_ProcessStarted(object sender, ProcessEventArgs e)
-        {
-            // Checking if we are currently on a different thread than the UI thread.
-            if (this.InvokeRequired)
-            {
-                // If so, invoke this method on the UI thread.
-                this.Invoke(new Action(() => ProcessMonitor_ProcessStarted(sender, e)));
-                return;
-            }
 
-            // This code runs on the UI thread
-            string message = $"{DateTime.Now.ToLongTimeString()} - Process STARTED: {e.ProcessName} (PID: {e.ProcessId})";
-            AppendOutput(message);
-
-        }
-
-        private void ProcessMonitor_ProcessStopped(object sender, ProcessEventArgs e)
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new Action(() => ProcessMonitor_ProcessStopped(sender, e)));
-                return;
-            }
-            //ui thread confirmed
-            string message = $"{DateTime.Now.ToLongTimeString()} - Process ENDED: {e.ProcessName} (PID: {e.ProcessId})";
-            AppendOutput(message);
-
-        }*/
         private async void Form1_Load(object sender, EventArgs e)
         {
+            PopulateMonitorComboBox();
             // Load programs automatically when the form loads.
             _configuredPrograms = await _configManager.LoadConfigAsync();
             RefreshProcessListUI();
@@ -118,38 +89,54 @@ namespace MonitorSwitcher
         private async void AddGameButton_Click(object sender, EventArgs e)
         {
             string processName = gameNameTextBox.Text.Trim();
-            //validate the process name
-            if (string.IsNullOrEmpty(processName))
+
+            if (string.IsNullOrWhiteSpace(processName)||monitorComboBox.SelectedItem ==null)
             {
-                MessageBox.Show("Please enter a valid process name.");
+                MessageBox.Show("Please enter a valid process name and monitor.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            if ((_configuredPrograms.Contains(processName, StringComparer.OrdinalIgnoreCase)))
+
+            if (_configuredPrograms.Any(p => p.ProcessName.Equals(processName, StringComparison.OrdinalIgnoreCase)))
             {
-                MessageBox.Show("already in the list", "duplicate entry", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("This process name is already in the list.", "Duplicate Entry", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            //add to list and ui
-            _configuredPrograms.Add(processName);
-            gameListBox.Items.Add(processName);
+            //new config
+            var newConfig = new ProgramConfig
+            {
+                ProcessName = processName,
+                // Cast the ComboBox item back to the enum
+                Mode = (MonitorMode)monitorComboBox.SelectedItem
+            };
+
+            _configuredPrograms.Add(newConfig);
+            RefreshProcessListUI();
             gameNameTextBox.Clear();
-            //save list to file
+
             await _configManager.SaveConfigAsync(_configuredPrograms);
-            AppendOutput($"Added game: {processName}");
+            AppendOutput($"Added and saved: {processName}");
         }
         private async void RemoveGameButton_Click(object sender, EventArgs e)
         {
             if (gameListBox.SelectedItem == null)
             {
-                MessageBox.Show("Please select a game to remove.");
+                MessageBox.Show("Please select an item to remove.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            string selectedProcess = gameListBox.SelectedItem.ToString();
-            _configuredPrograms.Remove(selectedProcess);
-            gameListBox.Items.Remove(selectedProcess);
 
-            await _configManager.SaveConfigAsync(_configuredPrograms);
-            AppendOutput($"Removed game: {selectedProcess}");
+            // The item in the list box is now a string representation of the ProgramConfig
+            string selectedItemText = gameListBox.SelectedItem.ToString();
+
+            // Find the corresponding object in our list
+            var configToRemove = _configuredPrograms.FirstOrDefault(p => $"{p.ProcessName} -> {p.Mode}" == selectedItemText);
+
+            if (configToRemove != null)
+            {
+                _configuredPrograms.Remove(configToRemove);
+                RefreshProcessListUI();
+                await _configManager.SaveConfigAsync(_configuredPrograms);
+                AppendOutput($"Removed and saved: {selectedItemText}");
+            }
         }
 
         private void RefreshProcessListUI()
@@ -160,15 +147,24 @@ namespace MonitorSwitcher
                 return;
             }
             gameListBox.Items.Clear();
-            foreach (var game in _configuredPrograms)
+            foreach (var program in _configuredPrograms)
             {
-                gameListBox.Items.Add(game);
+                gameListBox.Items.Add($"{program.ProcessName} -> {program.Mode}");
             }
         }
         private async void SaveConfigButton_Click(object sender, EventArgs e)
         {
             await _configManager.SaveConfigAsync(_configuredPrograms);
             AppendOutput("Configuration manually saved.");
+        }
+        private void PopulateMonitorComboBox()
+        {
+            monitorComboBox.Items.Clear();
+            monitorComboBox.Items.AddRange(Enum.GetValues(typeof(MonitorMode)).Cast<object>().ToArray());
+            if (monitorComboBox.Items.Count > 0)
+            {
+                monitorComboBox.SelectedIndex = 0;
+            }
         }
 
         private async void LoadConfigButton_Click(object sender, EventArgs e)
@@ -187,13 +183,30 @@ namespace MonitorSwitcher
                 return;
             }
 
+            // Find the configured monitor for this process
+            var config = _configuredPrograms.FirstOrDefault(p => p.ProcessName.Equals(e.ProcessName, StringComparison.OrdinalIgnoreCase));
+
             string message = $"{DateTime.Now.ToLongTimeString()} - Process STARTED: {e.ProcessName} (PID: {e.ProcessId})";
             AppendOutput(message);
 
-            if (_configuredPrograms.Contains(e.ProcessName, StringComparer.OrdinalIgnoreCase))
+            if (config != null)
             {
-                AppendOutput($"--- Configured PROGRAM STARTED: {e.ProcessName} ---");
-                // TODO: Implement monitor switching logic .
+                AppendOutput($"--- Configured PROGRAM STARTED: {e.ProcessName} on {config.Mode} ---");
+                notifyIconApp.ShowBalloonTip(3000, "Program Started", $"{e.ProcessName} has started on {config.Mode}.", ToolTipIcon.Info);
+
+                // Call the monitor switching logic
+                if (config.Mode == MonitorMode.Monitor1)
+                {
+                    _monitorManager.SetSingleMonitor(1);
+                }
+                else if (config.Mode == MonitorMode.Monitor2)
+                {
+                    _monitorManager.SetSingleMonitor(2);
+                }
+                else // Dual monitor mode
+                {
+                    _monitorManager.SetDualMonitors();
+                }
             }
         }
 
@@ -205,13 +218,18 @@ namespace MonitorSwitcher
                 return;
             }
 
+            var config = _configuredPrograms.FirstOrDefault(p => p.ProcessName.Equals(e.ProcessName, StringComparison.OrdinalIgnoreCase));
+
             string message = $"{DateTime.Now.ToLongTimeString()} - Process ENDED: {e.ProcessName} (PID: {e.ProcessId})";
             AppendOutput(message);
 
-            if (_configuredPrograms.Contains(e.ProcessName, StringComparer.OrdinalIgnoreCase))
+            if (config != null)
             {
                 AppendOutput($"--- Configured PROGRAM ENDED: {e.ProcessName} ---");
-                // TODO: Implement  monitor reverting logic .
+                notifyIconApp.ShowBalloonTip(3000, "Program Ended", $"{e.ProcessName} has closed.", ToolTipIcon.Info);
+
+                // Revert to the initial dual-monitor setup when a configured program closes
+                _monitorManager.SetDualMonitors();
             }
         }
         // --- System Tray Icon Event Handlers ---

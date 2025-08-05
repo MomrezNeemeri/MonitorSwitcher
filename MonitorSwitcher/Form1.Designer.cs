@@ -44,6 +44,7 @@
             contextMenuStrip1 = new ContextMenuStrip(components);
             showToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
+            monitorComboBox = new ComboBox();
             tableLayoutPanel1.SuspendLayout();
             flowLayoutPanel1.SuspendLayout();
             contextMenuStrip1.SuspendLayout();
@@ -77,6 +78,7 @@
             // 
             flowLayoutPanel1.Controls.Add(label1);
             flowLayoutPanel1.Controls.Add(gameNameTextBox);
+            flowLayoutPanel1.Controls.Add(monitorComboBox);
             flowLayoutPanel1.Controls.Add(addGameButton);
             flowLayoutPanel1.Controls.Add(removeGameButton);
             flowLayoutPanel1.Controls.Add(gameListBox);
@@ -94,9 +96,9 @@
             label1.AutoSize = true;
             label1.Location = new Point(3, 0);
             label1.Name = "label1";
-            label1.Size = new Size(148, 20);
+            label1.Size = new Size(105, 20);
             label1.TabIndex = 6;
-            label1.Text = "Game Process Name:";
+            label1.Text = "Process Name:";
             // 
             // gameNameTextBox
             // 
@@ -107,17 +109,17 @@
             // 
             // addGameButton
             // 
-            addGameButton.Location = new Point(3, 56);
+            addGameButton.Location = new Point(3, 97);
             addGameButton.Name = "addGameButton";
-            addGameButton.Size = new Size(94, 29);
+            addGameButton.Size = new Size(145, 29);
             addGameButton.TabIndex = 1;
-            addGameButton.Text = "Add Games";
+            addGameButton.Text = "Add Process";
             addGameButton.UseVisualStyleBackColor = true;
             addGameButton.Click += AddGameButton_Click;
             // 
             // removeGameButton
             // 
-            removeGameButton.Location = new Point(3, 91);
+            removeGameButton.Location = new Point(3, 132);
             removeGameButton.Name = "removeGameButton";
             removeGameButton.Size = new Size(145, 29);
             removeGameButton.TabIndex = 2;
@@ -128,28 +130,28 @@
             // gameListBox
             // 
             gameListBox.FormattingEnabled = true;
-            gameListBox.Location = new Point(3, 126);
+            gameListBox.Location = new Point(3, 167);
             gameListBox.Name = "gameListBox";
             gameListBox.Size = new Size(445, 304);
             gameListBox.TabIndex = 3;
             // 
             // saveConfigurationButton
             // 
-            saveConfigurationButton.Location = new Point(3, 436);
+            saveConfigurationButton.Location = new Point(3, 477);
             saveConfigurationButton.Name = "saveConfigurationButton";
             saveConfigurationButton.Size = new Size(140, 29);
             saveConfigurationButton.TabIndex = 4;
-            saveConfigurationButton.Text = "Save Games";
+            saveConfigurationButton.Text = "Save Processes";
             saveConfigurationButton.UseVisualStyleBackColor = true;
             saveConfigurationButton.Click += SaveConfigButton_Click;
             // 
             // loadConfigurationbutton
             // 
-            loadConfigurationbutton.Location = new Point(3, 471);
+            loadConfigurationbutton.Location = new Point(454, 3);
             loadConfigurationbutton.Name = "loadConfigurationbutton";
-            loadConfigurationbutton.Size = new Size(125, 29);
+            loadConfigurationbutton.Size = new Size(140, 29);
             loadConfigurationbutton.TabIndex = 5;
-            loadConfigurationbutton.Text = "Load Games";
+            loadConfigurationbutton.Text = "Load Process";
             loadConfigurationbutton.UseVisualStyleBackColor = true;
             loadConfigurationbutton.Click += LoadConfigButton_Click;
             // 
@@ -182,6 +184,15 @@
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
+            // monitorComboBox
+            // 
+            monitorComboBox.FormattingEnabled = true;
+            monitorComboBox.Location = new Point(3, 56);
+            monitorComboBox.Name = "monitorComboBox";
+            monitorComboBox.Size = new Size(151, 28);
+            monitorComboBox.TabIndex = 7;
+            monitorComboBox.Text = "Choose Monitor";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -213,5 +224,6 @@
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem showToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+        private ComboBox monitorComboBox;
     }
 }

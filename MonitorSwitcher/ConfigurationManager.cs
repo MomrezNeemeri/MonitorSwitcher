@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace MonitorSwitcher
 {
 
 
-    // Remove the parentheses after the class name to fix CS8862
     public class ConfigurationManager
     {
         private readonly String _configFilePath;
@@ -20,11 +20,11 @@ namespace MonitorSwitcher
             string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string appSpecificFolder = Path.Combine(appDataFolder, "MonitorSwitcher");
             Directory.CreateDirectory(appSpecificFolder);
-            _configFilePath = Path.Combine(appSpecificFolder, configFileName);
+            this._configFilePath = Path.Combine(appSpecificFolder, configFileName);
             Console.WriteLine($"Configuration file path: {_configFilePath}");
         }
 
-        public async Task SaveConfigAsync(List<string> configData)
+        public async Task SaveConfigAsync(List<ProgramConfig> configData)
         {
             try
             {
@@ -33,7 +33,7 @@ namespace MonitorSwitcher
                     WriteIndented = true
                 };
                 string jsonString = JsonSerializer.Serialize(configData, options);
-                await File.WriteAllTextAsync(_configFilePath, jsonString);
+                await File.WriteAllTextAsync(this._configFilePath, jsonString);
                 Console.WriteLine("Configuration saved successfully.");
             }
             catch (Exception ex)
@@ -41,24 +41,24 @@ namespace MonitorSwitcher
                 Console.WriteLine($"Error saving configuration.{ex.Message}");
             }
         }
-        public async Task<List<string>> LoadConfigAsync()
+        public async Task<List<ProgramConfig>> LoadConfigAsync()
         {
             if (!File.Exists(_configFilePath))
             {
                 Console.WriteLine("Configuration file not found. Returning empty list.");
-                return new List<string>();
+                return new List<ProgramConfig>();
             }
             try
             {
                 string jsonString = await File.ReadAllTextAsync(_configFilePath);
-                List<string> configData = JsonSerializer.Deserialize<List<string>>(jsonString);
+                List<ProgramConfig> configData = JsonSerializer.Deserialize<List<ProgramConfig>>(jsonString);
                 Console.WriteLine("Configuration loaded");
-                return configData ?? new List<string>();
+                return configData ?? new List<ProgramConfig>();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error loading configuration: {ex.Message}");
-                return new List<string>();
+                return new List<ProgramConfig>();
             }
         }
     }
